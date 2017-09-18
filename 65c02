@@ -1,0 +1,101 @@
+#!/bin/sh
+# vim600: set foldmethod=marker: # Faster folding in VIM.
+#
+# 65c02 emulator interface.
+#
+# Runs the 65C02 emulator with the ROM file.
+# Any passed in files are also loaded into the emulator.
+# Any .asm files are first compiled.
+#
+# Copyright (C) 2007 Lorance Stinson All rights reserved.  This script is free
+# software.  It may be copied or modified according to the same terms as Perl.
+#
+# For more information email <LoranceStinson+65c02@gmail.com>.
+# Or see http://lorance.freeshell.org/
+
+# Configuration.
+emu_files="rom/rom.obj"     # The files to run the emulator with.
+emu_state="H"               # The emulator startup state.
+asm_errors=""               # Set to a true value if there were errors.
+
+# print_usage() - Print the command line help text.
+print_usage(){
+    if [ "$1" ] ; then
+        # If anything is passed it's an error.
+        exit_code="1"
+        echo "$1" >&2
+        echo "" >&2
+    else
+        exit_code="0"
+    fi
+
+    cat<<EOHELP >&2
+Usage: `basename $0` [OPTIONS] [FILE(S)]
+Emulates the passed files with the rom file '$emu_files'.
+Assembles any .asm files passed.
+
+Options:
+    -h  This text.
+    -s  Set the emulator startup state.
+        H = Halted (Default) or R = Running.
+EOHELP
+    exit $EXIT_CODE
+}
+
+# Check and handle command line options.
+while getopts ":hs:" OPTION ; do
+    case $OPTION in
+        h)  print_usage;;           # Print the help text.
+        s)  emu_state="$OPTARG";;   # The emulator startup state.
+        *)  if [ "$OPTARG" = "-" ] ; then
+                print_usage # They probably only want help. Catches --help.
+            else
+                print_usage "Invalid option '$OPTION'." # Illegal option.
+            fi;;
+    esac
+done
+shift `expr $OPTIND - 1`
+
+# Process all the files passed on the command line.
+while [ "$#" -gt "0" ] ; do
+    # Get the file name.
+    file_name="$1"
+
+    # If the file does not exist try adding .asm or asm.
+    if [ ! -f "$file_name" ] ; then
+        if [ -f "${file_name}.asm" ] ; then
+            file_name="${file_name}.asm"
+        elif [ -f "${file_name}asm" ] ; then
+            file_name="${file_name}asm"
+        fi
+    fi
+
+    # If the file is a .asm file assemble it.
+    if [ "`expr "$file_name" : '.*\(.asm\)$'`" ] ; then
+        # Get the object file name.
+        object_file="`expr "$file_name" : '\(.*\).asm$'`"
+        object_file="${object_file}.obj"
+
+        # Assemble the file.
+        ./a65c02.awk "$file_name" > "$object_file"
+
+        # If the assembly failed print a warning and set $errors to true.
+        if [ "$?" -ne "0" ] ; then
+            echo "Errors assembling '$file_name'. Aborting..."
+            asm_errors="TRUE"
+        fi
+
+        # Fix the file name.
+        file_name="$object_file"
+    fi
+
+    # Add the file to the list of those to emulate.
+    emu_files="`echo "$emu_files"; echo "$file_name"`"
+
+    shift
+done;
+
+# If there were no errors emulate the files.
+if [ -z "$asm_errors" ] ; then
+    ./e65c02.awk -v emu_state="$emu_state" $emu_files
+fi

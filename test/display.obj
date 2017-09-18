@@ -1,0 +1,70 @@
+; Data Locations:
+;! FFFD 1
+;! FFFC 1
+
+; Symbol Table:
+;@ START_2    = 0221
+;@ START      = 0200
+;@ R_SCROLL   = C0F2
+;@ R_HALTSYS  = C0FA
+;@ R_RESET_VEC = FFFC
+;@ R_DISPCLR  = C0F1
+;@ R_DISPCTRL = C0F0
+;@ R_DISPL    = C000
+;@ R_PRINTCHAR = F01D
+;@ START_1    = 021F
+
+;Adr OP B1 B2 ; Line Source File: test/display.asm
+              ;    1 ; Include equates.
+              ;    2             .INC    equ.asm
+
+;Adr OP B1 B2 ; Line Source File: test/display.asm
+              ;    3 
+              ;    4 ; Halt the system.
+              ;    5             .MACRO  HALT
+              ;m   6             STZ     R_HALTSYS
+              ;    7             .ENDM
+              ;    8 
+              ;    9 START       .ORG    $0200
+0200 A9 A1    ;c  10             LDA     #$A1
+0202 25 0F    ;c  11             AND     $F
+              ;   12 
+              ;   13 ; Display Test, R_PRINTCHAR
+0204 A2 00    ;c  14             LDX     #0              ; Set the memory counter.
+0206 A9 21    ;c  15 :1          LDA     #$21            ; Get a character.
+0208 20 1D F0 ;c  16 :2          JSR     R_PRINTCHAR     ; Write the character to the display.
+020B 1A       ;c  17             INA                     ; Increment the character.
+020C E8       ;c  18             INX                     ; Advance to the next address.
+020D C9 7E    ;c  19             CMP     #$7E            ; If we have reached the limit of printable characters
+020F F0 F5    ;c  20             BEQ     :1              ; Reset the character counter.
+0211 E0 FF    ;c  21             CPX     #$FF            ; See if we have printed enough characters
+0213 D0 F3    ;c  22             BNE     :2              ; Nope, continue.
+              ;M  23             HALT                    ; Halt the emulator.
+0215 9C FA C0 ;c  23             STZ     R_HALTSYS
+              ;   24 
+              ;   25 ; Display Test, direct
+0218 A9 01    ;c  26             LDA     #$1             ; Turn off the display.
+021A 8D F0 C0 ;c  27             STA     R_DISPCTRL
+021D A2 00    ;c  28             LDX     #0              ; Set the memory counter.
+021F A9 21    ;c  29 :1          LDA     #$21            ; Get a character.
+0221 9D 00 C0 ;c  30 :2          STA     R_DISPL,X       ; Write the character to the display.
+0224 1A       ;c  31             INA                     ; Increment the character.
+0225 E8       ;c  32             INX                     ; Advance to the next address.
+0226 C9 7E    ;c  33             CMP     #$7E            ; If we have reached the limit of printable characters
+0228 F0 F5    ;c  34             BEQ     :1              ; Reset the character counter.
+022A E0 F0    ;c  35             CPX     #$F0            ; See if we have reached the last row.
+022C D0 F3    ;c  36             BNE     :2              ; Nope, continue.
+022E 9C F0 C0 ;c  37             STZ     R_DISPCTRL      ; Draw the display.
+              ;M  38             HALT                    ; Halt the emulator.
+0231 9C FA C0 ;c  38             STZ     R_HALTSYS
+0234 9C F2 C0 ;c  39             STZ     R_SCROLL        ; Move the display up one line.
+              ;M  40             HALT                    ; Halt the emulator.
+0237 9C FA C0 ;c  40             STZ     R_HALTSYS
+023A 9C F1 C0 ;c  41             STZ     R_DISPCLR       ; Clear the display.
+              ;M  42             HALT                    ; Halt the emulator.
+023D 9C FA C0 ;c  42             STZ     R_HALTSYS
+              ;   43 
+              ;   44 ; Set the Reset vector to start our code.
+              ;   45             .ORG    R_RESET_VEC
+FFFC    00    ;d  46             .BYTE   <START
+FFFD    02    ;d  47             .BYTE   >START

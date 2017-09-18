@@ -1,0 +1,63 @@
+; Data Locations:
+;! 021C 1
+;! 021D 1
+;! 021E 1
+;! 020E 14
+;! FFFC 1
+;! FFFD 1
+
+; Symbol Table:
+;@ R_PRINTMSG = F04F
+;@ R_PARMAH   = 00F1
+;@ R_PARMAL   = 00F0
+;@ R_RESET_VEC = FFFC
+;@ R_HALTSYS  = C0FA
+;@ START      = 0200
+;@ MSG        = 020E
+
+;Adr OP B1 B2 ; Line Source File: test/helloworld.asm
+              ;    1 ; Include equates.
+              ;    2             .INC    rom/equ.asm
+
+;Adr OP B1 B2 ; Line Source File: test/helloworld.asm
+              ;    3 
+              ;    4 ; Halt the system.
+              ;    5             .MACRO  HALT
+              ;m   6             STZ     R_HALTSYS
+              ;    7             .ENDM
+              ;    8 
+              ;    9 START       .ORG    $0200
+              ;   10 ; Use R_PRINTMSG
+0200 A9 0E    ;c  11             LDA     #<MSG
+0202 85 F0    ;c  12             STA     R_PARMAL
+0204 A9 02    ;c  13             LDA     #>MSG
+0206 85 F1    ;c  14             STA     R_PARMAH
+0208 20 4F F0 ;c  15             JSR     R_PRINTMSG
+              ;M  16             HALT
+020B 9C FA C0 ;c  16             STZ     R_HALTSYS
+              ;   17 
+              ;   18 ; Modified from the example at http://en.wikibooks.org/wiki/Transwiki:List_of_hello_world_programs
+              ;   19 ;            LDX     #$00        ; starting index in .X register
+              ;   20 ;LOOP        LDA     MSG,X       ; read message text
+              ;   21 ;            BEQ     LOOPEND     ; end of text
+              ;   22 ;            JSR     R_PRINTCHAR ; output char
+              ;   23 ;            INX
+              ;   24 ;            BNE     LOOP        ; repeat
+              ;   25 ;LOOPEND     HALT
+              ;   26 
+              ;   27 ; The data.
+020E    3E 48 ;d  28 MSG         .STRING ">Hello, world!"
+0210    65 6C ;d  28 
+0212    6C 6F ;d  28 
+0214    2C 20 ;d  28 
+0216    77 6F ;d  28 
+0218    72 6C ;d  28 
+021A    64 21 ;d  28 
+021C    0D    ;d  29             .BYTE   $0D
+021D    3E    ;d  30             .BYTE   '>
+021E    00    ;d  31             .BYTE   $00
+              ;   32 
+              ;   33 ; Set the Reset vector to start our code.
+              ;   34             .ORG    R_RESET_VEC
+FFFC    00    ;d  35             .BYTE   <START
+FFFD    02    ;d  36             .BYTE   >START

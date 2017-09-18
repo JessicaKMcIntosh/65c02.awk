@@ -1,0 +1,5 @@
+R_INTRATE:
+    The keyboard is checked for input then an interrupt is generated after this
+    many instructions are executed. A higher setting improves emulator
+    performance. A lower setting gives better keyboard response. The default
+    setting is 100.

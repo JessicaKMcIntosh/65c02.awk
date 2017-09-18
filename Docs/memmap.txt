@@ -1,0 +1,86 @@
+ Address     | Label        | Description.
+-------------+--------------+---------------------------------------------
+ 0000 - 001F |              | Sweet 16 registers. R0 - R15
+                                Available for use if Sweet 16 is not used.
+ 0000 - 0001 | R_SWR0       | Sweet 16 Register R0.
+ 0002 - 0003 | R_SWR1       | Sweet 16 Register R1.
+ 0004 - 0005 | R_SWR2       | Sweet 16 Register R2.
+ 0006 - 0007 | R_SWR3       | Sweet 16 Register R3.
+ 0008 - 0009 | R_SWR4       | Sweet 16 Register R4.
+ 000A - 000B | R_SWR5       | Sweet 16 Register R5.
+ 000C - 000D | R_SWR6       | Sweet 16 Register R6.
+ 000E - 000F | R_SWR7       | Sweet 16 Register R7.
+ 0010 - 0011 | R_SWR8       | Sweet 16 Register R8.
+ 0012 - 0013 | R_SWR9       | Sweet 16 Register R9.
+ 0014 - 0015 | R_SWR10      | Sweet 16 Register R10.
+ 0016 - 0017 | R_SWR11      | Sweet 16 Register R11.
+ 0018 - 0019 | R_SWR12      | Sweet 16 Register R12.
+ 001A - 001B | R_SWR13      | Sweet 16 Register R13.
+ 001C - 001D | R_SWR14      | Sweet 16 Register R14.
+ 001E - 001F | R_SWR15      | Sweet 16 Register R15.
+-------------+--------------+---------------------------------------------
+ 00F0 - 00FF |              | Reserved for the ROM.
+ 00F0 - 00F1 | R_PARMA      | Used to pass parameters to ROM routines.
+ 00F0        | R_PARMAL     | Parameter low byte.
+ 00F1        | R_PARMRH     | Parameter high byte.
+ 00F2 - 00F3 | R_PARMB      | Used to pass parameters to ROM routines.
+ 00F2        | R_PARMBL     | Parameter low byte.
+ 00F3        | R_PARMBH     | Parameter high byte.
+ 00F4 - 00F5 | R_PARMC      | Used to pass parameters to ROM routines.
+ 00F4        | R_PARMCL     | Parameter low byte.
+ 00F5        | R_PARMCH     | Parameter high byte.
+ 00F9        | R_TEMP       | Temporary variable.
+ 00FA        | R_INPOS      | The current position of the input buffer.
+ 00FB        | R_CURSOR     | The current position of the cursor.
+ 00FC - 00FF |              | Used by R_SAVE to save the system state.
+ 00FC        | R_SAVE_A     | Accumulator
+ 00FD        | R_SAVE_Y     | Y-Index Register
+ 00FE        | R_SAVE_X     | X-Index Register
+ 00FF        | R_SAVE_P     | Status Register
+-------------+--------------+---------------------------------------------
+ 0100 - 01FF |              | 65c02 Stack.
+-------------+--------------+---------------------------------------------
+ 0200 - BFFF |              | Reserved for user programs and data.
+-------------+--------------+---------------------------------------------
+ C000 - C0EF |              | Memory mapped text display. 40 x 6
+ C000        | R_DISPL      | Display memory bottom.
+ C000        | R_DISP0      | Display row 0.
+ C028        | R_DISP1      | Display row 1.
+ C050        | R_DISP2      | Display row 2.
+ C078        | R_DISP3      | Display row 3.
+ C0A0        | R_DISP4      | Display row 4.
+ C0C8        | R_DISP5      | Display row 5.
+ C0EF        | R_DISPH      | Display memory top.
+ C0F0        | R_DISPCTRL   | Display update mode. Defaults to 0.
+                                0 = Update on write to display addresses.
+                                1 = Only update on write to this address.
+ C0F1        | R_DISPCLR    | Clears the display.
+ C0F2        | R_SCROLL     | Scroll the display up one line.
+                                These two always update the display.
+ C0FA        | R_HALTSYS    | Halts the emulator when written to.
+ C0FB        | R_INTRATE    | Sets the interrupt/keyboard rate.
+                                Defaults to 100.
+ C0FC        | R_RANL       | 16 byte random number low byte.
+ C0FD        | R_RANH       | 16 byte random number high byte.
+ C0FE        | R_KEYBP      | Keyboard interface. Last key pressed.
+ C0FF        | R_KEYB       | The same as R_KEYBP but reading resets to 0.
+ C100 - C9FF |              | Reserved for future use.
+ CA00 - CEFF |              | Reserved for the ROM.
+ CF00 - CFFF | R_INPUT      | Input buffer.
+-------------+--------------+---------------------------------------------
+ D000 - DFFF |              | Reserved for future use.
+-------------+--------------+---------------------------------------------
+ E000 - EBFF | R_MONITOR    | Monitor.
+ EA00 - EFFF | R_MONMESS    | Monitor messages.
+-------------+--------------+---------------------------------------------
+ F000 - FFFF |              | Reserved for the ROM.
+ F000        | R_SAVE       | Save the registers and status.
+ F00C        | R_RESTORE    | Restores the registers and status.
+ F017        | R_MEMFILLP   | Fill up to 256 bytes of memory.
+ F017        | R_PRINTCHAR  | Print a character inteligently.
+ F04F        | R_PRINTMSGR  | Print a null terminated message.
+ F689        | R_SWEET16    | Sweet 16 entry point.
+ FFF0        | R_RTS        | This location will always have an RTS.
+ FFFA - FFFB | R_NMIT_VEC   | NMI vector.
+ FFFC - FFFD | R_RESET_VEC  | Reset vector.
+ FFFE - FFFF | R_IRQT_VEC   | IRQ Vector.

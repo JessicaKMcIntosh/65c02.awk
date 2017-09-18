@@ -1,0 +1,91 @@
+#!/bin/sh
+#
+# Build the 65c02 Emulator ROM.
+#
+# Copyright (C) 2007 Lorance Stinson All rights reserved.  This script is free
+# software.  It may be copied or modified according to the same terms as Perl.
+#
+# For more information email <LoranceStinson+65c02@gmail.com>.
+# Or see http://lorance.freeshell.org/
+
+# When True the temporary .obj files are cleaned up.
+clean_obj="True"
+
+# print_usage() - Print the command line help text.
+print_usage(){
+    if [ "$1" ] ; then
+        # If anything is passed it's an error.
+        EXIT_CODE="1"
+        echo "$1" >&2
+        echo "" >&2
+    else
+        EXIT_CODE="0"
+    fi
+
+    cat<<EOHELP >&2
+Usage: `basename $0` [OPTIONS]
+Builds the monitor ROM from the *.asm files in the current directory.
+Skips equ.asm messages.asm since they are included.
+
+Options:
+    -h  This text.
+    -k  Keep the obj files.
+        All temporary .obj files are cleaned up by default.
+EOHELP
+    exit $EXIT_CODE
+}
+
+# Check and handle command line options.
+while getopts ":hk" OPTION ; do
+    case $OPTION in
+        h)  print_usage;;           # Print the help text.
+        k)  clean_obj="False";;     # Keep the temporary .obj files.
+        *)  if [ "$OPTARG" = "-" ] ; then
+                print_usage # They probably only want help. Catches --help.
+            else
+                print_usage "Invalid option '$OPTION'." # Illegal option.
+            fi;;
+    esac
+done
+shift `expr $OPTIND - 1`
+
+# The files to combine into the ROM.
+files=""
+
+# Assemble all the source files.
+for source in `ls *.asm` ; do
+    # Skip equ.asm and messages.asm.
+    if [ "$source" = "equ.asm" -o "$source" = "messages.asm" ] ; then
+        continue;
+    fi
+
+    # Get the name of the object file.
+    object=`echo "$source" | sed -e 's/asm$/obj/'`
+
+    # Assemble the source file.
+    ../a65c02.awk $source > $object
+
+    # Abort if there were asembly errors.
+    if [ "$?" -ne "0" ] ; then
+        echo "Errors while assembling '$source'." 1>&2
+        echo "Build aborted." 1>&2
+        exit 1
+    fi
+
+    # Save the object file for combining.
+    files="$files $object"
+done
+
+# Combine the files into rom.obj
+../condense.awk $files > rom.obj
+
+# Print an error message if there was a problem.
+if [ "$?" -ne "0" ] ; then
+    echo "Errors combining source into rom." 1>&2
+    exit 1
+fi
+
+# Clean up the object files.
+if [ "$clean_obj" = "True" ] ; then
+    rm -f $files
+fi

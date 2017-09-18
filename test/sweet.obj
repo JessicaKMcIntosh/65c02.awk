@@ -1,0 +1,18 @@
+; Data Locations:
+
+; Symbol Table:
+;@ R_SWEET16  = F689
+
+;Adr OP B1 B2 ; Line Source File: sweet.asm
+              ;    1 ; Include equates.
+              ;    2             .INC    rom/equ.asm
+
+;Adr OP B1 B2 ; Line Source File: sweet.asm
+              ;    3 
+              ;    4             .ORG    $0200
+0200 20 89 F6 ;c   5             JSR     R_SWEET16
+0203 10 CD AB ;c   6             SET     0, $ABCD
+0206 11 34 12 ;c   7             SET     1, $1234
+0209 A1       ;c   8             ADD     1
+020A 00       ;c   9             RTN
+020B 9C FA C0 ;c  10             STZ     $C0FA

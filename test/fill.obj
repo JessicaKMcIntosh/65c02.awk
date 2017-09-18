@@ -1,0 +1,50 @@
+; Data Locations:
+;! FFFC 1
+;! FFFD 1
+
+; Symbol Table:
+;@ R_PARMA    = 00F0
+;@ R_MEMFILLP = 0212
+;@ R_PARMAH   = 00F1
+;@ R_PARMAL   = 00F0
+;@ R_RESET_VEC = FFFC
+;@ START      = 0200
+
+;Adr OP B1 B2 ; Line Source File: test/fill.asm
+              ;    1 ; Include equates.
+              ;    2             .INC    rom/equ.asm
+
+;Adr OP B1 B2 ; Line Source File: test/fill.asm
+              ;    3 
+              ;    4 ; Halt the system.
+              ;    5             .MACRO  HALT
+              ;m   6             STZ     R_HALTSYS
+              ;    7             .ENDM
+              ;    8 
+              ;    9 ; Fill a memory bank with a value.
+              ;   10 START       .ORG    $0200       ; Store the program at 0x0200
+0200 A9 00    ;c  11             LDA     #$00        ; The address to write.
+0202 85 F0    ;c  12             STA     R_PARMAL
+0204 A9 03    ;c  13             LDA     #$03
+0206 85 F1    ;c  14             STA     R_PARMAH
+0208 A0 FF    ;c  15             LDY     #$FF        ; The number of bytes to write.
+020A A9 AA    ;c  16             LDA     #$AA        ; The value to write.
+020C 20 17 F0 ;c  17             JSR     R_MEMFILLP  ; Fill the memory.
+020F 9C FA C0 ;c  18             STZ     $C0FA       ; HALT!
+              ;   19 
+              ;   20 ; Fill a page worth of memory.
+              ;   21 ; Limited to 256 bytes. Can cross page boundaries.
+              ;   22 ; Register A - The byte to fill memory with.
+              ;   23 ; Register X - Unchanged.
+              ;   24 ; Register Y - The number of bytes to clear. Clobbered.
+              ;   25 ;              Set to 0 to write 256 bytes.
+              ;   26 ; R_PARMA (F0 & F1) - The address to clear.
+0212 88       ;c  27 R_MEMFILLP  DEY                 ; Decrement the byte counter.
+0213 91 F0    ;c  28             STA     (R_PARMA),Y ; Write the fill byte.
+0215 D0 FB    ;c  29             BNE     R_MEMFILLP  ; Continue until all the bytes are written.
+0217 60       ;c  30             RTS                 ; Return.
+              ;   31 
+              ;   32 ; Set the Reset vector to start our code.
+              ;   33             .ORG    R_RESET_VEC
+FFFC    00    ;d  34             .BYTE   <START
+FFFD    02    ;d  35             .BYTE   >START

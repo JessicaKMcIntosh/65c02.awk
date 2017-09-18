@@ -1,0 +1,16 @@
+a65c02.awk
+    - Conditional compilation.
+    - Multiple comma separated bytes for data ops.
+    - Pascal and NULL terminated strings.
+
+e65c02.awk
+    - Add an option to make undefined OPs call BRK like the hardware hack.
+    - Implement interrupt when input is checked for.
+    - Implement a faked serial TTY mode using an emulated 6551.
+
+ROM
+    - Add serial versions of the printing utilities.
+    - Apple II compatability module:
+        FDED    Output the ASCII character in ACC
+        FDDA    Output ACC as a HEX pair.
+        FD0C    Get a key into ACC, waiting for a key press.

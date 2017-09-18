@@ -1,0 +1,261 @@
+=head1 NAME
+
+a65c02.awk - 6502 Assembler
+
+=head1 SYNOPSIS
+
+a65c02.awk FILE
+
+=head1 DESCRIPTION
+
+Assembles 65c02 source into a format suitable for e65c02.awk and d65c02.awk.
+The assembled source is output to STDOUT.
+
+=head1 FORMAT
+
+=head2 Character Case
+
+All symbols, labels and instructions are converted to upper case before
+assembly. This makes everything case insensitive.
+
+=head2 White Space and Comments
+
+Spaces and tabs are ignored. White space may appear anywhere except in names.
+Comments are delimited with by the ; character. Comments must always be
+delimited. Since this is a free format assembler a comment without a
+delimiter will be considered part of the expression. Each line must start with
+either white space or a label.
+
+=head2 Labels
+
+Labels may be any length and can contain any alphanumeric characters [A-Z 0-9
+_ .] and must start with a letter [A-Z]. If a label is not used the first
+character of the line must contain white space.
+
+Local labels are prefixed with a colon. The colon is replaced with the
+previous non-local label encountered and an underscore. They follow the format
+"PREVOUS_LOCAL". This change is reflected in the symbol table only. Local
+labels behave differently in macros. See below for details.
+
+=head2 Numbers
+
+All numbers are assumed to be in decimal unless a prefix is given.
+
+=over 6
+
+=item B<%>
+
+Binary number prefix.
+
+=item B<$>
+
+Hexadecimal number prefix.
+
+=item B<0 | @>
+
+Octal number prefix.
+
+=item B<'>
+
+ASCII character prefix.
+
+=item B<1-9>
+
+Decimal number.
+
+=back
+
+=head2 Operand Operators
+
+Expressions are evaluated from left to right. There is no precedence except
+that prefix operations are performed first. If an expression needs to be
+evaluated in a certain order group them with square brackets, [ and ]. Square
+brackets act just like parenthesis in normal arithmetic.
+
+=over 4
+
+=item B<+>
+
+Addition.
+
+=item B<->
+
+Subtraction.
+
+=item B</>
+
+Integer division.
+
+=item B<*>
+
+Multiplication.
+
+=item B<%>
+
+Modulo.
+
+=item B<^>
+
+Bitwise exclusive OR.
+
+=item B<&>
+
+Bitwise AND.
+
+=item B<|>
+
+Bitwise OR.
+
+=item B<~>
+
+Bitwise NOT. (Prefix)
+
+=item B<E<lt>>
+
+The low byte of a word. (Prefix)
+
+=item B<E<gt>>
+
+The high byte of a word. (Prefix)
+
+=back
+
+=head2 Pseudo Mnemonic
+
+=over 8
+
+=item B<*=>
+
+Assign a value to the Program Counter
+
+=item B<.BYTE>
+
+Inserts a single byte.
+
+=item B<.DBYTE>
+
+Inserts two bytes in high low order.
+
+=item B<.INCLUDE>
+ 
+Includes another file. No error is generated if the file does not exist. No
+checks are made for recursive inclusion. Local .LIST settings (ON, OFF, PART)
+set in the included file do not affect the including file.
+
+=item B<.ENDM>
+
+End a macro definition.
+
+=item B<.EQU>
+
+Assign a value to a label.
+
+=item B<.LIST>
+
+Controls listing of the original source. The operand is a comma separated list
+of options. The options apply starting with the line .LIST appears on. Local
+options (ON, OFF, PART) set in included files do not affect the files that
+included them. The setting is restored once the included file has finished
+loading. With no options behaves the same as ".LIST ON".
+
+The options are:
+
+=over 6
+
+=item B<ON>
+
+All source is listed. This is a local option. (Default)
+
+=item B<OFF>
+
+No source is listed. This is a local option.
+
+=item B<PART>
+
+Only source that was compiled is listed. Macros and other pseudo mnemonic that
+do not directly result in compiled code will not be listed. This is a local
+option.
+
+=item B<SON>
+
+The symbol table is listed before the source. This is a global option. (Default)
+
+=item B<SOFF>
+
+The symbol table is not listed. This is a global option. Disabling the symbol
+table will hinder the disassembler.
+
+=item B<DON>
+
+The data locations are listed before the symbol table. This is a global
+option. (Default)
+
+=item B<DOFF>
+
+The data locations are not listed. This is a global option. Disabling the data
+locations will hinder the disassembler.
+
+=back
+
+=item B<.MACRO>
+
+Start a macro definition. The operand is the macro name.
+
+=item B<.NLIST>
+
+Behaves the same as ".LIST OFF".
+
+=item B<.ORIGIN>
+
+Sets the Program Counter.
+
+=item B<.STRING>
+
+Inserts a string of text. The string should be wrapped in double quotes. The
+unexpected might happen if it is not. To include a double quote insert two
+double quotes.
+
+=item B<.WORD>
+
+Inserts two bytes in low high order.
+
+=back
+
+=head1 MACROS
+
+=head2 Definition
+
+Macros start with a B<.MACRO> pseudo mnemonic and end with a B<.ENDM> pseudo
+mnemonic. The name is given with B<.MACRO> in the operand field. Macro names
+are not checked against instruction names. Take care not to redefine
+instructions you will be using. The real instruction will become inaccessible.
+
+=head2 Calling
+
+Macros are used just like any instruction or pseudo mnemonic. Optional
+parameters for the macro can appear separated by commas in the operand field.
+
+=head2 Parameters
+
+Macros can have up to 9 parameters. Parameters are passed in the operand field
+of the macro call. Parameters are B<]1> for the first and B<]9> for the ninth.
+The parameter B<]#> resolves to the number of parameters that were passed. If
+a parameter is used but was not passed it is set to B<0>.
+
+=head2 Labels
+
+Macros can have private labels by prefixing the label with a colon. The colon
+will be replaced with the macro name, an under score, a unique number and
+another under score. This number is incremented each time a macro is called.
+The resulting labels resemble "NAME_#_LABEL". This change is reflected in the
+symbol table only.
+
+=head1 Sweet 16
+
+Sweet 16 opcodes are implemented just like native 65c02 instructions. All
+symbols not used in a branch must be defined before the instruction is
+encountered. An error will be generated if they are not. The mnemonics are
+the same as defined in existing Sweet 16 documentation. The B<@> indicator
+for indirect instructions is only required for indirect LD and ST.
+
+=cut

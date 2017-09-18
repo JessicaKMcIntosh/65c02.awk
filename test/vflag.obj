@@ -1,0 +1,190 @@
+; Data Locations:
+;! FFFD 1
+;! 0004 1
+;! 0005 12
+;! 001F 1
+;! 0000 1
+;! 0001 1
+;! 0011 1
+;! 0002 1
+;! FFFC 1
+;! 0012 13
+;! 0003 1
+
+; Symbol Table:
+;@ START_2    = 021A
+;@ START      = 0200
+;@ S1         = 0001
+;@ TEST       = 0220
+;@ S2         = 0002
+;@ FAILMSG    = 0012
+;@ PASSMSG    = 0005
+;@ ADD1       = 026C
+;@ ADD2       = 0279
+;@ U1         = 0003
+;@ ADD3       = 027A
+;@ U2         = 0004
+;@ ADD4       = 027D
+;@ LOOP       = 0238
+;@ R_HALTSYS  = C0FA
+;@ R_PARMAH   = 00F1
+;@ R_PARMAL   = 00F0
+;@ SUB1       = 028B
+;@ SUB2       = 029F
+;@ SUB3       = 02A0
+;@ SUB4       = 02A1
+;@ SUB5       = 02A7
+;@ DONE       = 025E
+;@ SUB        = 027E
+;@ R_RESET_VEC = FFFC
+;@ ERROR      = 0000
+;@ ADD        = 025F
+;@ R_PRINTMSG = F04F
+;@ START_1    = 0212
+
+;Adr OP B1 B2 ; Line Source File: test/vflag.asm
+              ;    1 ; Include equates.
+              ;    2             .INC    equ.asm
+
+;Adr OP B1 B2 ; Line Source File: test/vflag.asm
+              ;    3 
+              ;    4 ; Halt the system.
+              ;    5             .MACRO  HALT
+              ;m   6             STZ     R_HALTSYS
+              ;    7             .ENDM
+              ;    8 ; Run the test and display a message based on the result.
+              ;    9 START       .ORG    $0200
+0200 20 20 02 ;c  10             JSR     TEST        ; Run the tests.
+0203 AD 00 00 ;c  11             LDA     ERROR       ; See if the test passed.
+0206 F0 0A    ;c  12             BEQ     :1          ; The tests passed if ERROR = 0.
+0208 A9 12    ;c  13             LDA     #<FAILMSG   ; Load the failure message.
+020A 85 F0    ;c  14             STA     R_PARMAL
+020C A9 00    ;c  15             LDA     #>FAILMSG
+020E 85 F1    ;c  16             STA     R_PARMAH
+0210 80 08    ;c  17             BRA     :2
+0212 A9 05    ;c  18 :1          LDA     #<PASSMSG   ; Load the passed message.
+0214 85 F0    ;c  19             STA     R_PARMAL
+0216 A9 00    ;c  20             LDA     #>PASSMSG
+0218 85 F1    ;c  21             STA     R_PARMAH
+021A 20 4F F0 ;c  22 :2          JSR     R_PRINTMSG  ; Print the message.
+              ;M  23             HALT
+021D 9C FA C0 ;c  23             STZ     R_HALTSYS
+              ;   24 
+              ;   25 
+              ;   26 ; Taken from http://www.6502.org/tutorials/vflag.html
+0220 D8       ;c  27 TEST CLD       ; Clear decimal mode (just in case) for test
+0221 A9 01    ;c  28      LDA #1
+0223 8D 00 00 ;c  29      STA ERROR ; Store 1 in ERROR until test passes
+0226 A9 80    ;c  30      LDA #$80
+0228 8D 01 00 ;c  31      STA S1    ; Initalize S1 and S2 to -128 ($80)
+022B 8D 02 00 ;c  32      STA S2
+022E A9 00    ;c  33      LDA #0
+0230 8D 03 00 ;c  34      STA U1    ; Initialize U1 and U2 to 0
+0233 8D 04 00 ;c  35      STA U2
+0236 A0 01    ;c  36      LDY #1    ; Initialize Y (used to set and clear the carry flag) to 1
+0238 20 5F 02 ;c  37 LOOP JSR ADD   ; Test ADC
+023B E0 01    ;c  38      CPX #1
+023D F0 1F    ;c  39      BEQ DONE  ; End if V and unsigned result do not agree (X = 1)
+023F 20 7E 02 ;c  40      JSR SUB   ; Test SBC
+0242 E0 01    ;c  41      CPX #1
+0244 F0 18    ;c  42      BEQ DONE  ; End if V and unsigned result do not agree (X = 1)
+0246 EE 01 00 ;c  43      INC S1
+0249 EE 03 00 ;c  44      INC U1
+024C D0 EA    ;c  45      BNE LOOP  ; Loop until all 256 possibilities of S1 and U1 are tested
+024E EE 02 00 ;c  46      INC S2
+0251 EE 04 00 ;c  47      INC U2
+0254 D0 E2    ;c  48      BNE LOOP  ; Loop until all 256 possibilities of S2 and U2 are tested
+0256 88       ;c  49      DEY
+0257 10 DF    ;c  50      BPL LOOP  ; Loop until both possiblities of the carry flag are tested
+0259 A9 00    ;c  51      LDA #0
+025B 8D 00 00 ;c  52      STA ERROR ; All tests pass, so store 0 in ERROR
+025E 60       ;c  53 DONE RTS
+              ;   54 ;
+              ;   55 ; Test ADC
+              ;   56 ;
+              ;   57 ; X is initialized to 0
+              ;   58 ; X is incremented when V = 1
+              ;   59 ; X is incremented when the unsigned result predicts an overflow
+              ;   60 ; Therefore, if the V flag and the unsigned result agree, X will be
+              ;   61 ; incremented zero or two times (returning X = 0 or X = 2), and if they do
+              ;   62 ; not agree X will be incremented once (returning X = 1)
+              ;   63 ;
+025F C0 01    ;c  64 ADD  CPY #1   ; Set carry when Y = 1, clear carry when Y = 0
+0261 AD 01 00 ;c  65      LDA S1   ; Test twos complement addition
+0264 6D 02 00 ;c  66      ADC S2
+0267 A2 00    ;c  67      LDX #0   ; Initialize X to 0
+0269 50 01    ;c  68      BVC ADD1 
+026B E8       ;c  69      INX      ; Increment X if V = 1
+026C C0 01    ;c  70 ADD1 CPY #1   ; Set carry when Y = 1, clear carry when Y = 0
+026E AD 03 00 ;c  71      LDA U1   ; Test unsigned addition
+0271 6D 04 00 ;c  72      ADC U2
+0274 B0 04    ;c  73      BCS ADD3 ; Carry is set if U1 + U2 >= 256
+0276 30 01    ;c  74      BMI ADD2 ; U1 + U2 < 256, A >= 128 if U1 + U2 >= 128
+0278 E8       ;c  75      INX      ; Increment X if U1 + U2 < 128
+0279 60       ;c  76 ADD2 RTS      
+027A 10 01    ;c  77 ADD3 BPL ADD4 ; U1 + U2 >= 256, A <= 127 if U1 + U2 <= 383 ($17F)
+027C E8       ;c  78      INX      ; Increment X if U1 + U2 > 383
+027D 60       ;c  79 ADD4 RTS
+              ;   80 ;
+              ;   81 ; Test SBC
+              ;   82 ;
+              ;   83 ; X is initialized to 0
+              ;   84 ; X is incremented when V = 1
+              ;   85 ; X is incremented when the unsigned result predicts an overflow
+              ;   86 ; Therefore, if the V flag and the unsigned result agree, X will be
+              ;   87 ; incremented zero or two times (returning X = 0 or X = 2), and if they do
+              ;   88 ; not agree X will be incremented once (returning X = 1)
+              ;   89 ;
+027E C0 01    ;c  90 SUB  CPY #1   ; Set carry when Y = 1, clear carry when Y = 0
+0280 AD 01 00 ;c  91      LDA S1   ; Test twos complement subtraction
+0283 ED 02 00 ;c  92      SBC S2
+0286 A2 00    ;c  93      LDX #0   ; Initialize X to 0
+0288 50 01    ;c  94      BVC SUB1
+028A E8       ;c  95      INX      ; Increment X if V = 1
+028B C0 01    ;c  96 SUB1 CPY #1   ; Set carry when Y = 1, clear carry when Y = 0
+028D AD 03 00 ;c  97      LDA U1   ; Test unsigned subtraction
+0290 ED 04 00 ;c  98      SBC U2
+0293 48       ;c  99      PHA      ; Save the low byte of result on the stack
+0294 A9 FF    ;c 100      LDA #$FF
+0296 E9 00    ;c 101      SBC #$00 ; result = (65280 + U1) - U2, 65280 = $FF00
+0298 C9 FE    ;c 102      CMP #$FE 
+029A D0 05    ;c 103      BNE SUB4 ; Branch if result >= 65280 ($FF00) or result < 65024 ($FE00)
+029C 68       ;c 104      PLA      ; Get the low byte of result
+029D 30 01    ;c 105      BMI SUB3 ; result < 65280 ($FF00), A >= 128 if result >= 65152 ($FE80)
+029F E8       ;c 106 SUB2 INX      ; Increment X if result < 65152 ($FE80)
+02A0 60       ;c 107 SUB3 RTS
+02A1 68       ;c 108 SUB4 PLA      ; Get the low byte of result (does not affect the carry flag)
+02A2 90 FB    ;c 109      BCC SUB2 ; The carry flag is clear if result < 65024 ($FE00)
+02A4 10 01    ;c 110      BPL SUB5 ; result >= 65280 ($FF00), A <= 127 if result <= 65407 ($FF7F)
+02A6 E8       ;c 111      INX      ; Increment X if result > 65407 ($FF7F)
+02A7 60       ;c 112 SUB5 RTS
+              ;  113 
+              ;  114 ; Variables used by the test.
+              ;  115             .ORG        $0000
+0000    00    ;d 116 ERROR       .BYTE       #00
+0001    00    ;d 117 S1          .BYTE       #00
+0002    00    ;d 118 S2          .BYTE       #00
+0003    00    ;d 119 U1          .BYTE       #00
+0004    00    ;d 120 U2          .BYTE       #00
+              ;  121 
+              ;  122 ; Messages.
+0005    54 65 ;d 123 PASSMSG     .STRING     "Test Passed."
+0007    73 74 ;d 123 
+0009    20 50 ;d 123 
+000B    61 73 ;d 123 
+000D    73 65 ;d 123 
+000F    64 2E ;d 123 
+0011    00    ;d 124             .BYTE       #00
+0012    54 65 ;d 125 FAILMSG     .STRING     "Test FAILED!!"
+0014    73 74 ;d 125 
+0016    20 46 ;d 125 
+0018    41 49 ;d 125 
+001A    4C 45 ;d 125 
+001C    44 21 ;d 125 
+001E    21    ;d 125 
+001F    00    ;d 126             .BYTE       #00
+              ;  127 
+              ;  128 ; Set the Reset vector to start our code.
+              ;  129             .ORG    R_RESET_VEC
+FFFC    00    ;d 130             .BYTE   <START
+FFFD    02    ;d 131             .BYTE   >START
